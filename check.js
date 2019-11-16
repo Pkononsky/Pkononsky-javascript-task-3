@@ -8,8 +8,7 @@ function definePropertyForPrototype(proto, prop, Constructor) {
     Object.defineProperty(proto, prop, {
         get() {
             return new Constructor(this);
-        },
-        configurable: true
+        }
     });
 }
 
@@ -43,9 +42,10 @@ const methods = {
             .includes(key)) {
             return false;
         }
-        const allowableType = [String, Number, Function, Array].includes(type);
+        const allowableType = [String, Number, Function, Array];
+        let boolRes = this.self[key].constructor.name === type.name;
 
-        return typeof this.self[key] === typeof type() && allowableType;
+        return boolRes && allowableType.includes(type);
     },
     hasLength: function (length) {
         return this.self.length === length;
@@ -112,20 +112,14 @@ function ConstructorForFunction(self) {
     Object.assign(this, new ConstructorForAll(self, Function.prototype));
 }
 
-function init() {
+exports.init = function () {
     definePropertyForPrototype(Object.prototype, 'check', ConstructorForObject);
     definePropertyForPrototype(Array.prototype, 'check', ConstructorForArray);
     definePropertyForPrototype(String.prototype, 'check', ConstructorForString);
     definePropertyForPrototype(Function.prototype, 'check', ConstructorForFunction);
-}
-
-exports.init = function () {
-    init();
 };
 
 exports.wrap = function (val) {
-    init();
-
     return isNull(val) ? getObjForNull() : getObjForNotNull(val);
 };
 
