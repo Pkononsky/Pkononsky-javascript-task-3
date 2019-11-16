@@ -128,19 +128,11 @@ function getObjForNull() {
         return true;
     };
     Object.assign(properties, getOtherMethods(properties));
-    properties.not = new Proxy(methods, {
-        get(target, prop) {
-            if (prop in properties) {
-                return function () {
-                    return false;
-                };
-            }
-
-            return function () {
-                return true;
-            };
-        }
-    });
+    properties.not = {};
+    properties.not.isNull = function () {
+        return false;
+    };
+    Object.assign(properties.not, getOtherMethods(properties.not));
 
     return properties;
 }
