@@ -32,7 +32,7 @@ const methods = {
             .includes(value));
     },
     hasValues: function (values) {
-        const realValues = Object.keys(this.self);
+        const realValues = Object.values(this.self);
         const equalLength = isEqualObjectsLength(values, realValues);
 
         return values.every((value) => realValues.includes(value)) && equalLength;
