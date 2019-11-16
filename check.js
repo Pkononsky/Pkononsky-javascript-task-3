@@ -54,14 +54,11 @@ const methods = {
     },
     hasWordsCount: function (count) {
         let wordsCount = 0;
-        this.self.split('\n')
-            .forEach((line) => {
-                line.split(' ')
-                    .forEach((word) => {
-                        if (word !== '') {
-                            wordsCount++;
-                        }
-                    });
+        this.self.split(' ')
+            .forEach((word) => {
+                if (word !== '') {
+                    wordsCount++;
+                }
             });
 
         return wordsCount === count;
@@ -85,6 +82,10 @@ function ConstructorForAll(self, prototype) {
                     }
                 });
             }
+
+            return function () {
+                return false;
+            };
         }
     });
 }
