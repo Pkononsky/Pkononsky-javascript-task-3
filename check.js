@@ -152,10 +152,11 @@ function getOtherMethods(properties) {
     for (let method in methods) {
         if (!(method in properties)) {
             let name = method.toString();
-            Object.defineProperty(properties, name, {
+            Object.defineProperty(proper, name, {
                 value: function () {
                     return false;
-                }
+                },
+                enumerable: true
             });
         }
     }
