@@ -121,10 +121,6 @@ exports.init = function () {
 };
 
 exports.wrap = function (val) {
-    if (!(['object', 'array', 'string', 'function'].includes(typeof val)) && !isNull(val)) {
-        return false;
-    }
-
     let obj = !isNull(val) ? Object.getPrototypeOf(val) : {
         isNull: function () {
             return true;
@@ -157,8 +153,19 @@ exports.wrap = function (val) {
             }
         });
     } else {
+        obj.not = {};
         obj = new Proxy(obj, {
             get(target, prop) {
+                if (prop === 'not') {
+                    return new Proxy(target[prop], {
+                        get() {
+                            return function () {
+                                return false;
+                            };
+                        }
+                    });
+                }
+
                 if (prop in target) {
                     return target[prop];
                 }
