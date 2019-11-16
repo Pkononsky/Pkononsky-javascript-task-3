@@ -121,6 +121,10 @@ exports.init = function () {
 };
 
 exports.wrap = function (val) {
+    if (!(['object', 'array', 'string', 'function'].includes(typeof val)) && !isNull(val)) {
+        return false;
+    }
+
     let obj = !isNull(val) ? Object.getPrototypeOf(val) : {
         isNull: function () {
             return true;
