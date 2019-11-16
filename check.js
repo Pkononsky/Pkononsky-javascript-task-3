@@ -54,11 +54,14 @@ const methods = {
     },
     hasWordsCount: function (count) {
         let wordsCount = 0;
-        this.self.split(' ')
-            .forEach((word) => {
-                if (word !== '') {
-                    wordsCount++;
-                }
+        this.self.split('\n')
+            .forEach((line) => {
+                line.split(' ')
+                    .forEach((word) => {
+                        if (word !== '') {
+                            wordsCount++;
+                        }
+                    });
             });
 
         return wordsCount === count;
@@ -127,12 +130,7 @@ function getObjForNull() {
     properties.isNull = function () {
         return true;
     };
-    Object.assign(properties, getOtherMethods(properties, false));
-    properties.not = {};
-    properties.not.isNull = function () {
-        return false;
-    };
-    Object.assign(properties.not, getOtherMethods(properties.not, true));
+    Object.assign(properties, getOtherMethods(properties));
 
     return properties;
 }
@@ -143,23 +141,23 @@ function getObjForNotNull(val) {
         return false;
     };
     properties.self = val;
-    Object.assign(properties, getOtherMethods(properties, false));
+    Object.assign(properties, getOtherMethods(properties));
     let obj = { check: properties };
-    Object.assign(obj, getOtherMethods(obj, false));
+    Object.assign(obj, getOtherMethods(obj));
     obj.check.not = {};
     Object.assign(obj.check, new ConstructorForAll(val, obj));
 
     return obj;
 }
 
-function getOtherMethods(properties, bool) {
+function getOtherMethods(properties) {
     let proper = {};
     for (let method in methods) {
         if (!(method in properties)) {
             let name = method.toString();
             Object.defineProperty(proper, name, {
                 value: function () {
-                    return bool;
+                    return false;
                 },
                 enumerable: true
             });
