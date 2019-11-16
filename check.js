@@ -8,7 +8,8 @@ function definePropertyForPrototype(proto, prop, Constructor) {
     Object.defineProperty(proto, prop, {
         get() {
             return new Constructor(this);
-        }
+        },
+        configurable: true
     });
 }
 
@@ -82,10 +83,6 @@ function ConstructorForAll(self, prototype) {
                     }
                 });
             }
-
-            return function () {
-                return false;
-            };
         }
     });
 }
@@ -115,14 +112,20 @@ function ConstructorForFunction(self) {
     Object.assign(this, new ConstructorForAll(self, Function.prototype));
 }
 
-exports.init = function () {
+function init() {
     definePropertyForPrototype(Object.prototype, 'check', ConstructorForObject);
     definePropertyForPrototype(Array.prototype, 'check', ConstructorForArray);
     definePropertyForPrototype(String.prototype, 'check', ConstructorForString);
     definePropertyForPrototype(Function.prototype, 'check', ConstructorForFunction);
+}
+
+exports.init = function () {
+    init();
 };
 
 exports.wrap = function (val) {
+    init();
+
     return isNull(val) ? getObjForNull() : getObjForNotNull(val);
 };
 
