@@ -127,12 +127,12 @@ function getObjForNull() {
     properties.isNull = function () {
         return true;
     };
-    Object.assign(properties, getOtherMethods(properties));
+    Object.assign(properties, getOtherMethods(properties, false));
     properties.not = {};
     properties.not.isNull = function () {
         return false;
     };
-    Object.assign(properties.not, getOtherMethods(properties.not));
+    Object.assign(properties.not, getOtherMethods(properties.not, true));
 
     return properties;
 }
@@ -143,23 +143,23 @@ function getObjForNotNull(val) {
         return false;
     };
     properties.self = val;
-    Object.assign(properties, getOtherMethods(properties));
+    Object.assign(properties, getOtherMethods(properties, false));
     let obj = { check: properties };
-    Object.assign(obj, getOtherMethods(obj));
+    Object.assign(obj, getOtherMethods(obj, false));
     obj.check.not = {};
     Object.assign(obj.check, new ConstructorForAll(val, obj));
 
     return obj;
 }
 
-function getOtherMethods(properties) {
+function getOtherMethods(properties, bool) {
     let proper = {};
     for (let method in methods) {
         if (!(method in properties)) {
             let name = method.toString();
             Object.defineProperty(proper, name, {
                 value: function () {
-                    return false;
+                    return bool;
                 },
                 enumerable: true
             });
