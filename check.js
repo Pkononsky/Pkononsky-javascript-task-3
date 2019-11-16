@@ -63,88 +63,54 @@ const methods = {
 
         return wordsCount === count;
     },
-    not: {
-        containsKeys: function (keys) {
-            return !keys.every((key) => Object.keys(this.self)
-                .includes(key));
-        },
-        hasKeys: function (keys) {
-            const realKeys = Object.keys(this.self);
-            const equalLength = isEqualObjectsLength(keys, realKeys);
-
-            return !keys.every((key) => realKeys.includes(key)) && equalLength;
-        },
-        containsValues: function (values) {
-            return !values.every((value) => Object.values(this.self)
-                .includes(value));
-        },
-        hasValues: function (values) {
-            const realValues = Object.keys(this.self);
-            const equalLength = isEqualObjectsLength(values, realValues);
-
-            return !values.every((value) => realValues.includes(value)) && equalLength;
-        },
-        hasValueType: function (key, type) {
-            if (!Object.keys(this.self)
-                .includes(key)) {
-                return true;
-            }
-            const allowableType = [String, Number, Function, Array].includes(type);
-
-            return !(typeof this.self[key] === typeof type() && allowableType);
-        },
-        hasLength: function (length) {
-            return !(Object.entries(this.self).length === length);
-        },
-        hasParamsCount: function (count) {
-            return !(this.self.length === count);
-        },
-        hasWordsCount: function (count) {
-            let wordsCount = 0;
-            this.self.split(' ')
-                .forEach((word) => {
-                    if (word !== '') {
-                        wordsCount++;
-                    }
-                });
-
-            return !(wordsCount === count);
-        }
+    isNull: function () {
+        return false;
     }
 };
 
-function ConstructorForObject(self) {
+function ConstructorForAll(self, prototype) {
     this.self = self;
+    this.not =
+        new Proxy(methods, {
+            get(target, prop) {
+                if (prop === 'self') {
+                    return self;
+                }
+                if (prop in prototype.check) {
+                    return new Proxy(prototype.check[prop], {
+                        apply(target2, thisArg, argArray) {
+                            return !target2.apply(thisArg, argArray);
+                        }
+                    });
+                }
+            }
+        });
+    this.isNull = methods.isNull;
+}
+
+function ConstructorForObject(self) {
     this.containsKeys = methods.containsKeys;
     this.hasKeys = methods.hasKeys;
     this.containsValues = methods.containsValues;
     this.hasValues = methods.hasValues;
     this.hasValueType = methods.hasValueType;
-    this.not = methods.not;
-    this.not.self = self;
+    Object.assign(this, new ConstructorForAll(self, Object.prototype));
 }
 
 function ConstructorForArray(self) {
-    this.self = self;
     Object.assign(this, new ConstructorForObject(self));
     this.hasLength = methods.hasLength;
-    this.not = methods.not;
-    this.not.self = self;
 }
 
 function ConstructorForString(self) {
-    this.self = self;
     this.hasLength = methods.hasLength;
     this.hasWordsCount = methods.hasWordsCount;
-    this.not = methods.not;
-    this.not.self = self;
+    Object.assign(this, new ConstructorForAll(self, String.prototype));
 }
 
 function ConstructorForFunction(self) {
-    this.self = self;
     this.hasParamsCount = methods.hasParamsCount;
-    this.not = methods.not;
-    this.not.self = self;
+    Object.assign(this, new ConstructorForAll(self, Function.prototype));
 }
 
 exports.init = function () {
@@ -155,27 +121,46 @@ exports.init = function () {
 };
 
 exports.wrap = function (val) {
-    if (!isNull(val)) {
-        return val;
-    }
-
-    let obj = {
+    let obj = !isNull(val) ? Object.getPrototypeOf(val) : {
         isNull: function () {
             return true;
         }
     };
 
-    obj = new Proxy(obj, {
-        get(target, prop) {
-            if (prop in target) {
-                return target[prop];
-            }
+    if (!isNull(val)) {
+        obj = new Proxy(obj, {
+            get(target, prop) {
+                if (prop in target) {
+                    return new Proxy(target[prop], {
+                        get(target2, p) {
+                            if (p === 'self') {
+                                return val;
+                            }
+                            if (p in target2) {
+                                return target2[p];
+                            }
 
-            return function () {
-                return false;
-            };
-        }
-    });
+                            return function () {
+                                return false;
+                            };
+                        }
+                    });
+                }
+            }
+        });
+    } else {
+        obj = new Proxy(obj, {
+            get(target, prop) {
+                if (prop in target) {
+                    return target[prop];
+                }
+
+                return function () {
+                    return false;
+                };
+            }
+        });
+    }
 
     return obj;
 };
