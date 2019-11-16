@@ -38,14 +38,9 @@ const methods = {
         return values.every((value) => realValues.includes(value)) && equalLength;
     },
     hasValueType: function (key, type) {
-        if (!Object.keys(this.self)
-            .includes(key)) {
-            return false;
-        }
-        const allowableType = [String, Number, Function, Array];
         let boolRes = this.self[key].constructor.name === type.name;
 
-        return boolRes && allowableType.includes(type);
+        return boolRes;
     },
     hasLength: function (length) {
         return this.self.length === length;
