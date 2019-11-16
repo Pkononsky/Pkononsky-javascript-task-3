@@ -146,6 +146,10 @@ exports.wrap = function (val) {
                         }
                     });
                 }
+
+                return function () {
+                    return false;
+                };
             }
         });
     } else {
