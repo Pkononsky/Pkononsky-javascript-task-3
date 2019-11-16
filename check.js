@@ -70,22 +70,20 @@ const methods = {
 
 function ConstructorForAll(self, prototype) {
     this.self = self;
-    this.not =
-        new Proxy(methods, {
-            get(target, prop) {
-                if (prop === 'self') {
-                    return self;
-                }
-                if (prop in prototype.check) {
-                    return new Proxy(prototype.check[prop], {
-                        apply(target2, thisArg, argArray) {
-                            return !target2.apply(thisArg, argArray);
-                        }
-                    });
-                }
+    this.not = new Proxy(methods, {
+        get(target, prop) {
+            if (prop === 'self') {
+                return self;
             }
-        });
-    this.isNull = methods.isNull;
+            if (prop in prototype.check) {
+                return new Proxy(prototype.check[prop], {
+                    apply(target2, thisArg, argArray) {
+                        return !target2.apply(thisArg, argArray);
+                    }
+                });
+            }
+        }
+    });
 }
 
 function ConstructorForObject(self) {
@@ -121,61 +119,42 @@ exports.init = function () {
 };
 
 exports.wrap = function (val) {
-    let obj = !isNull(val) ? Object.getPrototypeOf(val) : {
-        isNull: function () {
-            return true;
-        }
+    return isNull(val) ? getObjForNull() : getObjForNotNull(val);
+};
+
+function getObjForNull() {
+    let properties = {};
+    properties.isNull = function () {
+        return true;
     };
+    Object.assign(properties, getOtherMethods(properties));
 
-    if (!isNull(val)) {
-        obj = new Proxy(obj, {
-            get(target, prop) {
-                if (prop in target) {
-                    return new Proxy(target[prop], {
-                        get(target2, p) {
-                            if (p === 'self') {
-                                return val;
-                            }
-                            if (p in target2) {
-                                return target2[p];
-                            }
+    return properties;
+}
 
-                            return function () {
-                                return false;
-                            };
-                        }
-                    });
-                }
+function getObjForNotNull(val) {
+    let properties = Object.getPrototypeOf(val).check;
+    properties.isNull = function () {
+        return false;
+    };
+    properties.self = val;
+    Object.assign(properties, getOtherMethods(properties));
 
-                return function () {
+    return { check: properties };
+}
+
+function getOtherMethods(properties) {
+    let proper = {};
+    for (let method in methods) {
+        if (!(method in properties)) {
+            let name = method.toString();
+            Object.defineProperty(properties, name, {
+                value: function () {
                     return false;
-                };
-            }
-        });
-    } else {
-        obj.not = {};
-        obj = new Proxy(obj, {
-            get(target, prop) {
-                if (prop === 'not') {
-                    return new Proxy(target[prop], {
-                        get() {
-                            return function () {
-                                return false;
-                            };
-                        }
-                    });
                 }
-
-                if (prop in target) {
-                    return target[prop];
-                }
-
-                return function () {
-                    return false;
-                };
-            }
-        });
+            });
+        }
     }
 
-    return obj;
-};
+    return proper;
+}
