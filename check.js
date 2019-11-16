@@ -47,7 +47,7 @@ const methods = {
         return typeof this.self[key] === typeof type() && allowableType;
     },
     hasLength: function (length) {
-        return Object.entries(this.self).length === length;
+        return this.self.length === length;
     },
     hasParamsCount: function (count) {
         return this.self.length === count;
