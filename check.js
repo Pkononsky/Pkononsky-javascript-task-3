@@ -139,8 +139,10 @@ function getObjForNotNull(val) {
     };
     properties.self = val;
     Object.assign(properties, getOtherMethods(properties));
+    let obj = { check: properties };
+    Object.assign(obj, getOtherMethods(obj));
 
-    return { check: properties };
+    return obj;
 }
 
 function getOtherMethods(properties) {
