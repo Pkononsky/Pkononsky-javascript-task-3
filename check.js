@@ -34,8 +34,11 @@ const methods = {
         return compareArrays(realValues, values) && compareArrays(values, realValues);
     },
     hasValueType: function (key, type) {
-        if (!Object.keys(this.self)
-            .includes(key)) {
+        if (type === undefined) {
+            type = key[1];
+            key = key[0];
+        }
+        if (!Object.keys(this.self).includes(key)) {
             return false;
         }
         const allowableType = [String, Number, Function, Array];
