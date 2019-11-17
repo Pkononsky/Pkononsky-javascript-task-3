@@ -34,17 +34,15 @@ const methods = {
         return compareArrays(realValues, values) && compareArrays(values, realValues);
     },
     hasValueType: function (key, type) {
-        if (type === undefined) {
-            type = key[1];
-            key = key[0];
+        if (![String, Number, Function, Array].includes(type)) {
+            return false;
         }
         if (!Object.keys(this.self).includes(key)) {
             return false;
         }
-        const allowableType = [String, Number, Function, Array];
         let boolRes = this.self[key].constructor.name === type.name;
 
-        return boolRes && allowableType.includes(type);
+        return boolRes;
     },
     hasLength: function (length) {
         return this.self.length === length;
