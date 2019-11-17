@@ -40,7 +40,7 @@ const methods = {
     hasValueType: function (key, type) {
         if (!Object.keys(this.self)
             .includes(key)) {
-            return [false];
+            return false;
         }
         const allowableType = [String, Number, Function, Array];
         let boolRes = this.self[key].constructor.name === type.name;
@@ -79,12 +79,7 @@ function ConstructorForAll(self, prototype) {
             if (prop in prototype.check) {
                 return new Proxy(prototype.check[prop], {
                     apply(target2, thisArg, argArray) {
-                        let res = target2.apply(thisArg, argArray);
-                        if (res instanceof Array) {
-                            return res.pop();
-                        }
-
-                        return !res;
+                        return !target2.apply(thisArg, argArray);
                     }
                 });
             }
@@ -135,6 +130,12 @@ function getObjForNull() {
         return true;
     };
     Object.assign(properties, getOtherMethods(properties));
+    properties.not = {
+        isNull: function () {
+            return true;
+        }
+    };
+    Object.assign(properties.not, getOtherMethods(properties.not, true));
 
     return properties;
 }
@@ -154,14 +155,14 @@ function getObjForNotNull(val) {
     return obj;
 }
 
-function getOtherMethods(properties) {
+function getOtherMethods(properties, bool = false) {
     let proper = {};
     for (let method in methods) {
         if (!(method in properties)) {
             let name = method.toString();
             Object.defineProperty(proper, name, {
                 value: function () {
-                    return false;
+                    return bool;
                 },
                 enumerable: true
             });
