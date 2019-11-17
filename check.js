@@ -142,8 +142,11 @@ function getObjForNotNull(val) {
     properties.self = val;
     Object.assign(properties, getOtherMethods(properties));
     let obj = { check: properties };
+    Object.assign(obj, getOtherMethods(obj));
     obj.check.not = {};
     Object.assign(obj.check, new ConstructorForAll(val, obj));
+    obj.not = {};
+    Object.assign(obj.not, getOtherMethods(obj.not));
 
     return obj;
 }
