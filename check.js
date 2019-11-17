@@ -69,14 +69,14 @@ const methods = {
     }
 };
 
-function ConstructorForAll(self, prototype, otherMethods = {}) {
+function ConstructorForAll(self, prototype) {
     this.self = self;
     this.not = new Proxy(methods, {
         get(target, prop) {
             if (prop === 'self') {
                 return self;
             }
-            if (prop in otherMethods) {
+            if (prop === 'isNull') {
                 return function () {
                     return false;
                 };
@@ -145,12 +145,11 @@ function getObjForNotNull(val) {
         return false;
     };
     properties.self = val;
-    let otherMethods = getOtherMethods(properties);
-    Object.assign(properties, otherMethods);
+    Object.assign(properties, getOtherMethods(properties));
     let obj = { check: properties };
     Object.assign(obj, getOtherMethods(obj));
     obj.check.not = {};
-    Object.assign(obj.check, new ConstructorForAll(val, obj, otherMethods));
+    Object.assign(obj.check, new ConstructorForAll(val, obj));
 
     return obj;
 }
