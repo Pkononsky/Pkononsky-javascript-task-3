@@ -1,9 +1,5 @@
 'use strict';
 
-function isEqualObjectsLength(obj1, obj2) {
-    return obj1.length === obj2.length;
-}
-
 function definePropertyForPrototype(proto, prop, Constructor) {
     Object.defineProperty(proto, prop, {
         get() {
@@ -25,19 +21,17 @@ const methods = {
         return compareArrays(keys, Object.keys(this.self));
     },
     hasKeys: function (keys) {
-        const realKeys = Object.keys(this.self);
-        const equalLength = isEqualObjectsLength(keys, realKeys);
+        let realKeys = Object.keys(this.self);
 
-        return compareArrays(keys, realKeys) && equalLength;
+        return compareArrays(realKeys, keys) && compareArrays(keys, realKeys);
     },
     containsValues: function (values) {
         return compareArrays(values, Object.values(this.self));
     },
     hasValues: function (values) {
-        const realValues = Object.values(this.self);
-        const equalLength = isEqualObjectsLength(values, realValues);
+        let realValues = Object.values(this.self);
 
-        return compareArrays(values, realValues) && equalLength;
+        return compareArrays(realValues, values) && compareArrays(values, realValues);
     },
     hasValueType: function (key, type) {
         if (!Object.keys(this.self)
@@ -78,38 +72,13 @@ function ConstructorForAll(self, prototype) {
         Object.defineProperty(this.not, method, {
             get() {
                 return function () {
-                    let args = [];
-                    for (let arg of Object.values(arguments)) {
-                        args.push(arg);
-                    }
-                    let res = prototype[method](...args);
-
-                    return !res;
+                    return !prototype[method](...Object.values(arguments));
                 };
             },
             enumerable: true
         });
     }
 }
-
-
-// function ConstructorForAll(self, prototype) {
-//     this.self = self;
-//     this.not = new Proxy(methods, {
-//         get(target, prop) {
-//             if (prop === 'self') {
-//                 return self;
-//             }
-//             if (prop in prototype.check) {
-//                 return new Proxy(prototype.check[prop], {
-//                     apply(target2, thisArg, argArray) {
-//                         return !target2.apply(thisArg, argArray);
-//                     }
-//                 });
-//             }
-//         }
-//     });
-// }
 
 function ConstructorForObject(self) {
     this.containsKeys = methods.containsKeys;
