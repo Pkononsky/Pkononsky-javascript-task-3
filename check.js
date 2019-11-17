@@ -98,6 +98,7 @@ function ConstructorForObject(self) {
 
 function ConstructorForArray(self) {
     Object.assign(this, new ConstructorForObject(self));
+    Object.assign(this, new ConstructorForAll(self, Array.prototype));
     this.hasLength = methods.hasLength;
 }
 
