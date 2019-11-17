@@ -146,19 +146,19 @@ function getObjForNotNull(val) {
     obj.check.not = {};
     Object.assign(obj.check, new ConstructorForAll(val, obj));
     obj.not = {};
-    Object.assign(obj.not, getOtherMethods(obj.not));
+    Object.assign(obj.not, getOtherMethods(obj.not, true));
 
     return obj;
 }
 
-function getOtherMethods(properties) {
+function getOtherMethods(properties, bool = false) {
     let proper = {};
     for (let method in methods) {
         if (!(method in properties)) {
             let name = method.toString();
             Object.defineProperty(proper, name, {
                 value: function () {
-                    return false;
+                    return bool;
                 },
                 enumerable: true
             });
