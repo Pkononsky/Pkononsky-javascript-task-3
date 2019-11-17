@@ -71,6 +71,7 @@ const methods = {
 
 function ConstructorForAll(self, prototype) {
     this.self = self;
+    this.isNull = methods.isNull;
     this.not = new Proxy(methods, {
         get(target, prop) {
             if (prop === 'self') {
@@ -97,9 +98,9 @@ function ConstructorForObject(self) {
 }
 
 function ConstructorForArray(self) {
+    this.hasLength = methods.hasLength;
     Object.assign(this, new ConstructorForObject(self));
     Object.assign(this, new ConstructorForAll(self, Array.prototype));
-    this.hasLength = methods.hasLength;
 }
 
 function ConstructorForString(self) {
