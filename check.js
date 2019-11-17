@@ -1,7 +1,20 @@
 'use strict';
 
+function getUniqueCount(obj) {
+    let seen = [];
+    let count = 0;
+    for (let i of obj) {
+        if (!seen.includes(i)) {
+            seen.push(i);
+            count++;
+        }
+    }
+
+    return count;
+}
+
 function isEqualObjectsLength(obj1, obj2) {
-    return obj1.length === obj2.length;
+    return getUniqueCount(obj1) === getUniqueCount(obj2);
 }
 
 function definePropertyForPrototype(proto, prop, Constructor) {
@@ -75,11 +88,6 @@ function ConstructorForAll(self, prototype) {
         get(target, prop) {
             if (prop === 'self') {
                 return self;
-            }
-            if (prop === 'isNull') {
-                return function () {
-                    return false;
-                };
             }
             if (prop in prototype.check) {
                 return new Proxy(prototype.check[prop], {
