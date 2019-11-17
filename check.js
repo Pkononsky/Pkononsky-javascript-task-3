@@ -40,9 +40,8 @@ const methods = {
         if (!Object.keys(this.self).includes(key)) {
             return false;
         }
-        let boolRes = this.self[key].constructor.name === type.name;
 
-        return boolRes;
+        return this.self[key].constructor.name === type.name;
     },
     hasLength: function (length) {
         return this.self.length === length;
@@ -66,14 +65,14 @@ const methods = {
     }
 };
 
-function ConstructorForAll(self, prototype) {
+function ConstructorForAll(self, obj) {
     this.self = self;
     this.not = {};
-    for (let method of Object.getOwnPropertyNames(prototype)) {
+    for (let method of Object.getOwnPropertyNames(obj)) {
         Object.defineProperty(this.not, method, {
             get() {
                 return function () {
-                    return !prototype[method](...Object.values(arguments));
+                    return !obj[method](...Object.values(arguments));
                 };
             },
             enumerable: true
@@ -140,7 +139,7 @@ function getObjForNotNull(val) {
     let obj = { check: properties };
     Object.assign(obj, getOtherMethods(obj));
     obj.check.not = {};
-    Object.assign(obj.check, new ConstructorForAll(val, obj));
+    Object.assign(obj.check, new ConstructorForAll(val, obj.check));
 
     return obj;
 }
