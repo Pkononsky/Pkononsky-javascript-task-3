@@ -80,18 +80,22 @@ function ConstructorForAll(self, prototype) {
     }
 }
 
-function ConstructorForObject(self) {
+function ConstructorForObjectAndArrays() {
     this.containsKeys = methods.containsKeys;
     this.hasKeys = methods.hasKeys;
     this.containsValues = methods.containsValues;
     this.hasValues = methods.hasValues;
     this.hasValueType = methods.hasValueType;
+}
+
+function ConstructorForObject(self) {
+    Object.assign(this, new ConstructorForObjectAndArrays());
     Object.assign(this, new ConstructorForAll(self, this));
 }
 
 function ConstructorForArray(self) {
     this.hasLength = methods.hasLength;
-    Object.assign(this, new ConstructorForObject(self));
+    Object.assign(this, new ConstructorForObjectAndArrays());
     Object.assign(this, new ConstructorForAll(self, this));
 }
 
@@ -129,9 +133,7 @@ function getObjForNull() {
 
 function getObjForNotNull(val) {
     let properties = Object.getPrototypeOf(val).check;
-    properties.isNull = function () {
-        return false;
-    };
+    properties.isNull = methods.isNull;
     properties.self = val;
     Object.assign(properties, getOtherMethods(properties));
     let obj = { check: properties };
