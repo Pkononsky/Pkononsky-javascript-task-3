@@ -16,26 +16,32 @@ function isNull(val) {
     return val === null;
 }
 
+function compareArrays(arr1, arr2) {
+    if (!(arr1 instanceof Array && arr2 instanceof Array)) {
+        return false;
+    }
+
+    return arr1.every((value) => arr2.includes(value));
+}
+
 const methods = {
     containsKeys: function (keys) {
-        return keys.every((key) => Object.keys(this.self)
-            .includes(key));
+        return compareArrays(keys, Object.keys(this.self));
     },
     hasKeys: function (keys) {
         const realKeys = Object.keys(this.self);
         const equalLength = isEqualObjectsLength(keys, realKeys);
 
-        return keys.every((key) => realKeys.includes(key)) && equalLength;
+        return compareArrays(keys, realKeys) && equalLength;
     },
     containsValues: function (values) {
-        return values.every((value) => Object.values(this.self)
-            .includes(value));
+        return compareArrays(values, Object.values(this.self));
     },
     hasValues: function (values) {
         const realValues = Object.values(this.self);
         const equalLength = isEqualObjectsLength(values, realValues);
 
-        return values.every((value) => realValues.includes(value)) && equalLength;
+        return compareArrays(values, realValues) && equalLength;
     },
     hasValueType: function (key, type) {
         if (!Object.keys(this.self)
@@ -145,20 +151,18 @@ function getObjForNotNull(val) {
     Object.assign(obj, getOtherMethods(obj));
     obj.check.not = {};
     Object.assign(obj.check, new ConstructorForAll(val, obj));
-    obj.not = {};
-    Object.assign(obj.not, getOtherMethods(obj.not, true));
 
     return obj;
 }
 
-function getOtherMethods(properties, bool = false) {
+function getOtherMethods(properties) {
     let proper = {};
     for (let method in methods) {
         if (!(method in properties)) {
             let name = method.toString();
             Object.defineProperty(proper, name, {
                 value: function () {
-                    return bool;
+                    return false;
                 },
                 enumerable: true
             });
