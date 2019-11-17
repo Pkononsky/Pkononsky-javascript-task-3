@@ -131,7 +131,7 @@ function getObjForNull() {
     };
     Object.assign(properties, getOtherMethods(properties));
     properties.not = {
-        isNull: function () {
+        isNull() {
             return false;
         }
     };
