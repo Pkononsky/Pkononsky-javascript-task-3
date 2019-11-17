@@ -17,10 +17,6 @@ function isNull(val) {
 }
 
 function compareArrays(arr1, arr2) {
-    if (!(arr1 instanceof Array && arr2 instanceof Array)) {
-        return false;
-    }
-
     return arr1.every((value) => arr2.includes(value));
 }
 
@@ -77,21 +73,43 @@ const methods = {
 
 function ConstructorForAll(self, prototype) {
     this.self = self;
-    this.not = new Proxy(methods, {
-        get(target, prop) {
-            if (prop === 'self') {
-                return self;
-            }
-            if (prop in prototype.check) {
-                return new Proxy(prototype.check[prop], {
-                    apply(target2, thisArg, argArray) {
-                        return !target2.apply(thisArg, argArray);
+    this.not = {};
+    for (let method of Object.getOwnPropertyNames(prototype)) {
+        Object.defineProperty(this.not, method, {
+            get() {
+                return function () {
+                    let args = [];
+                    for (let arg of Object.values(arguments)) {
+                        args.push(arg);
                     }
-                });
-            }
-        }
-    });
+                    let res = prototype[method](...args);
+
+                    return !res;
+                };
+            },
+            enumerable: true
+        });
+    }
 }
+
+
+// function ConstructorForAll(self, prototype) {
+//     this.self = self;
+//     this.not = new Proxy(methods, {
+//         get(target, prop) {
+//             if (prop === 'self') {
+//                 return self;
+//             }
+//             if (prop in prototype.check) {
+//                 return new Proxy(prototype.check[prop], {
+//                     apply(target2, thisArg, argArray) {
+//                         return !target2.apply(thisArg, argArray);
+//                     }
+//                 });
+//             }
+//         }
+//     });
+// }
 
 function ConstructorForObject(self) {
     this.containsKeys = methods.containsKeys;
@@ -99,24 +117,24 @@ function ConstructorForObject(self) {
     this.containsValues = methods.containsValues;
     this.hasValues = methods.hasValues;
     this.hasValueType = methods.hasValueType;
-    Object.assign(this, new ConstructorForAll(self, Object.prototype));
+    Object.assign(this, new ConstructorForAll(self, this));
 }
 
 function ConstructorForArray(self) {
     this.hasLength = methods.hasLength;
     Object.assign(this, new ConstructorForObject(self));
-    Object.assign(this, new ConstructorForAll(self, Array.prototype));
+    Object.assign(this, new ConstructorForAll(self, this));
 }
 
 function ConstructorForString(self) {
     this.hasLength = methods.hasLength;
     this.hasWordsCount = methods.hasWordsCount;
-    Object.assign(this, new ConstructorForAll(self, String.prototype));
+    Object.assign(this, new ConstructorForAll(self, this));
 }
 
 function ConstructorForFunction(self) {
     this.hasParamsCount = methods.hasParamsCount;
-    Object.assign(this, new ConstructorForAll(self, Function.prototype));
+    Object.assign(this, new ConstructorForAll(self, this));
 }
 
 exports.init = function () {
