@@ -37,7 +37,8 @@ const methods = {
         if (![String, Number, Function, Array].includes(type)) {
             return false;
         }
-        if (!Object.keys(this.self).includes(key)) {
+        if (!Object.keys(this.self)
+            .includes(key)) {
             return false;
         }
 
@@ -69,6 +70,9 @@ function ConstructorForAll(self, obj) {
     this.self = self;
     this.not = {};
     for (let method of Object.getOwnPropertyNames(obj)) {
+        if (method === 'not' || method === 'self') {
+            continue;
+        }
         Object.defineProperty(this.not, method, {
             get() {
                 return function () {
@@ -126,7 +130,7 @@ function getObjForNull() {
     properties.isNull = function () {
         return true;
     };
-    Object.assign(properties, getOtherMethods(properties));
+    assignMethods(properties, null);
 
     return properties;
 }
@@ -134,12 +138,16 @@ function getObjForNull() {
 function getObjForNotNull(val) {
     let properties = Object.getPrototypeOf(val).check;
     properties.isNull = methods.isNull;
-    Object.assign(properties, getOtherMethods(properties));
-    properties.not = {};
-    Object.assign(properties, new ConstructorForAll(val, properties));
+    assignMethods(properties, val);
 
     return properties;
 }
+
+function assignMethods(properties, val) {
+    Object.assign(properties, getOtherMethods(properties));
+    Object.assign(properties, new ConstructorForAll(val, properties));
+}
+
 function getOtherMethods(properties) {
     let proper = {};
     for (let method in methods) {
