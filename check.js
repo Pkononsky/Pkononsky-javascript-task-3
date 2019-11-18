@@ -134,16 +134,12 @@ function getObjForNull() {
 function getObjForNotNull(val) {
     let properties = Object.getPrototypeOf(val).check;
     properties.isNull = methods.isNull;
-    properties.self = val;
     Object.assign(properties, getOtherMethods(properties));
-    let obj = { check: properties };
-    Object.assign(obj, getOtherMethods(obj));
-    obj.check.not = {};
-    Object.assign(obj.check, new ConstructorForAll(val, obj.check));
+    properties.not = {};
+    Object.assign(properties, new ConstructorForAll(val, properties));
 
-    return obj;
+    return properties;
 }
-
 function getOtherMethods(properties) {
     let proper = {};
     for (let method in methods) {
