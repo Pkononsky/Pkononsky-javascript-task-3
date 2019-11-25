@@ -1,159 +1,170 @@
 'use strict';
 
-function definePropertyForPrototype(proto, prop, Constructor) {
-    Object.defineProperty(proto, prop, {
-        get() {
-            return new Constructor(this);
-        }
-    });
-}
-
 function isNull(val) {
     return val === null;
 }
 
-function compareArrays(arr1, arr2) {
-    return arr1.every((value) => arr2.includes(value));
+function isArraysEqual(a, b) {
+    return a.every((value) => b.includes(value));
 }
 
 const methods = {
     containsKeys: function (keys) {
-        return compareArrays(keys, Object.keys(this.self));
+        return isArraysEqual(keys, Object.keys(this));
     },
     hasKeys: function (keys) {
-        let realKeys = Object.keys(this.self);
+        let realKeys = Object.keys(this);
 
-        return compareArrays(realKeys, keys) && compareArrays(keys, realKeys);
+        return isArraysEqual(realKeys, keys) && isArraysEqual(keys, realKeys);
     },
     containsValues: function (values) {
-        return compareArrays(values, Object.values(this.self));
+        return isArraysEqual(values, Object.values(this));
     },
     hasValues: function (values) {
-        let realValues = Object.values(this.self);
+        let realValues = Object.values(this);
 
-        return compareArrays(realValues, values) && compareArrays(values, realValues);
+        return isArraysEqual(realValues, values) && isArraysEqual(values, realValues);
     },
     hasValueType: function (key, type) {
         if (![String, Number, Function, Array].includes(type)) {
             return false;
         }
-        if (!Object.keys(this.self)
+        if (!Object.keys(this)
             .includes(key)) {
             return false;
         }
 
-        return this.self[key].constructor.name === type.name;
+        return this[key].constructor.name === type.name;
     },
     hasLength: function (length) {
-        return this.self.length === length;
+        return this.length === length;
     },
     hasParamsCount: function (count) {
-        return this.self.length === count;
+        return this.length === count;
     },
     hasWordsCount: function (count) {
-        let wordsCount = 0;
-        this.self.split(' ')
-            .forEach((word) => {
-                if (word !== '') {
-                    wordsCount++;
-                }
-            });
-
-        return wordsCount === count;
+        return this.split(' ')
+            .filter((word) => {
+                return word !== '';
+            }).length === count;
     },
     isNull: function () {
         return false;
     }
 };
 
-function ConstructorForAll(self, obj) {
-    this.self = self;
-    this.not = {};
-    for (let method of Object.getOwnPropertyNames(obj)) {
-        if (method === 'not' || method === 'self') {
+function assignNotMethods(object) {
+    let notMethods = {};
+    for (let method of Object.getOwnPropertyNames(object)) {
+        if (method === 'not') {
             continue;
         }
-        Object.defineProperty(this.not, method, {
+        Object.defineProperty(notMethods, method, {
             get() {
                 return function () {
-                    return !obj[method](...Object.values(arguments));
+                    return !object[method](...Object.values(arguments));
                 };
             },
             enumerable: true
         });
     }
+    object.not = {};
+    Object.assign(object.not, notMethods);
 }
 
-function ConstructorForObjectAndArrays() {
-    this.containsKeys = methods.containsKeys;
-    this.hasKeys = methods.hasKeys;
-    this.containsValues = methods.containsValues;
-    this.hasValues = methods.hasValues;
-    this.hasValueType = methods.hasValueType;
+function getMethodsForObjectAndArrays(context) {
+    return {
+        containsKeys(keys) {
+            return methods.containsKeys.call(context, keys);
+        },
+        hasKeys(keys) {
+            return methods.hasKeys.call(context, keys);
+        },
+        containsValues(values) {
+            return methods.containsValues.call(context, values);
+        },
+        hasValues(values) {
+            return methods.hasValues.call(context, values);
+        },
+        hasValueType(key, value) {
+            return methods.hasValueType.call(context, key, value);
+        }
+    };
 }
 
-function ConstructorForObject(self) {
-    Object.assign(this, new ConstructorForObjectAndArrays());
-    Object.assign(this, new ConstructorForAll(self, this));
-}
+function getContextMethods(context) {
+    let contextMethods = {};
+    let type = context.constructor.name;
 
-function ConstructorForArray(self) {
-    this.hasLength = methods.hasLength;
-    Object.assign(this, new ConstructorForObjectAndArrays());
-    Object.assign(this, new ConstructorForAll(self, this));
-}
+    if (type === 'Object') {
+        Object.assign(contextMethods, getMethodsForObjectAndArrays(context));
+    }
+    if (type === 'Array') {
+        Object.assign(contextMethods, getMethodsForObjectAndArrays(context));
+        contextMethods.hasLength = function (length) {
+            return methods.hasLength.call(context, length);
+        };
+    }
+    if (type === 'String') {
+        contextMethods.hasLength = function (length) {
+            return methods.hasLength.call(context, length);
+        };
+        contextMethods.hasWordsCount = function (count) {
+            return methods.hasWordsCount.call(context, count);
+        };
+    }
+    if (type === 'Function') {
+        contextMethods.hasParamsCount = function (count) {
+            return methods.hasParamsCount.call(context, count);
+        };
+    }
+    assignNotMethods(contextMethods);
 
-function ConstructorForString(self) {
-    this.hasLength = methods.hasLength;
-    this.hasWordsCount = methods.hasWordsCount;
-    Object.assign(this, new ConstructorForAll(self, this));
-}
-
-function ConstructorForFunction(self) {
-    this.hasParamsCount = methods.hasParamsCount;
-    Object.assign(this, new ConstructorForAll(self, this));
+    return contextMethods;
 }
 
 exports.init = function () {
-    definePropertyForPrototype(Object.prototype, 'check', ConstructorForObject);
-    definePropertyForPrototype(Array.prototype, 'check', ConstructorForArray);
-    definePropertyForPrototype(String.prototype, 'check', ConstructorForString);
-    definePropertyForPrototype(Function.prototype, 'check', ConstructorForFunction);
+    Object.defineProperty(Object.prototype, 'check', {
+        get() {
+            return getContextMethods(this);
+        }
+    });
 };
 
 exports.wrap = function (val) {
-    return isNull(val) ? getObjForNull() : getObjForNotNull(val);
+    return isNull(val) ? getWrapForNull() : getWrapForNotNull(val);
 };
 
-function getObjForNull() {
-    let properties = {};
-    properties.isNull = function () {
+function getWrapForNull() {
+    let nullWrap = {};
+    nullWrap.isNull = function () {
         return true;
     };
-    assignMethods(properties, null);
+    assignMethods(nullWrap);
 
-    return properties;
+    return nullWrap;
 }
 
-function getObjForNotNull(val) {
-    let properties = Object.getPrototypeOf(val).check;
-    properties.isNull = methods.isNull;
-    assignMethods(properties, val);
+function getWrapForNotNull(val) {
+    let valWrap = getContextMethods(val);
+    valWrap.isNull = function () {
+        return methods.isNull.call();
+    };
+    assignMethods(valWrap);
 
-    return properties;
+    return valWrap;
 }
 
-function assignMethods(properties, val) {
-    Object.assign(properties, getOtherMethods(properties));
-    Object.assign(properties, new ConstructorForAll(val, properties));
+function assignMethods(wrap) {
+    assignUndefinedMethods(wrap);
+    assignNotMethods(wrap);
 }
 
-function getOtherMethods(properties) {
-    let proper = {};
+function assignUndefinedMethods(wrap) {
     for (let method in methods) {
-        if (!(method in properties)) {
+        if (!(method in wrap)) {
             let name = method.toString();
-            Object.defineProperty(proper, name, {
+            Object.defineProperty(wrap, name, {
                 value: function () {
                     return false;
                 },
@@ -161,6 +172,4 @@ function getOtherMethods(properties) {
             });
         }
     }
-
-    return proper;
 }
