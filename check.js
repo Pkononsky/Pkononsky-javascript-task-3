@@ -143,7 +143,13 @@ function assignAllMethods(val) {
     Object.getOwnPropertyNames(methods)
         .reduce((prev, method) => {
             prev[method] = function () {
-                return isNull(val) ? false : methods[method].call(val, ...Object.values(arguments));
+                if (!isNull(val)) {
+                    if (method in val.check) {
+                        return methods[method].call(val, ...Object.values(arguments));
+                    }
+                }
+
+                return false;
             };
 
             return prev;
@@ -151,4 +157,3 @@ function assignAllMethods(val) {
 
     return wrap;
 }
-
