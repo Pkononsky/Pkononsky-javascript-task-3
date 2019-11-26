@@ -1,5 +1,9 @@
 'use strict';
 
+function isNull(val) {
+    return val === null;
+}
+
 function isArraysEqual(a, b) {
     return a.length === b.length && isArrayContainsElements(a, b);
 }
@@ -48,54 +52,80 @@ const methods = {
     }
 };
 
-const OBJECT_ARRAY_METHODS = [
-    methods.containsValues,
-    methods.hasValues,
-    methods.containsKeys,
-    methods.hasKeys,
-    methods.hasValueType
-];
+function assignNotMethods(object) {
+    object.not = {};
+    Object.assign(object.not, Object.getOwnPropertyNames(object)
+        .filter((prop) => prop !== 'not')
+        .reduce((prev, prop) => {
+            prev[prop] = function () {
+                return !object[prop](...Object.values(arguments));
+            };
 
-const ARRAY_AND_STRING_METHOD = [
-    methods.hasLength
-];
+            return prev;
+        }, {}));
+}
 
-const STRING_METHOD = [
-    methods.hasWordsCount
-];
+function getMethodsForObjectAndArrays(context) {
+    return {
+        containsKeys(keys) {
+            return methods.containsKeys.call(context, keys);
+        },
+        hasKeys(keys) {
+            return methods.hasKeys.call(context, keys);
+        },
+        containsValues(values) {
+            return methods.containsValues.call(context, values);
+        },
+        hasValues(values) {
+            return methods.hasValues.call(context, values);
+        },
+        hasValueType(key, value) {
+            return methods.hasValueType.call(context, key, value);
+        }
+    };
+}
 
-const FUNCTION_METHOD = [
-    methods.hasParamsCount
-];
+function getMethodForStringsAndArrays(context) {
+    return {
+        hasLength(length) {
+            return methods.hasLength.call(context, length);
+        }
+    };
+}
 
-let context;
+function getContextMethods(context) {
+    let contextMethods = {};
+    let type = context.constructor.name;
 
-function defineMethodsForPrototype(properties, prototype) {
-    prototype.not = prototype.not === undefined ? {} : prototype.not;
-    properties.reduce((prev, method) => {
-        prototype[method.name] = method;
-        prototype.not[method.name] = function () {
-            return !method.call(context, ...Object.values(arguments));
+    if (type === 'Object') {
+        Object.assign(contextMethods, getMethodsForObjectAndArrays(context));
+    }
+    if (type === 'Array') {
+        Object.assign(contextMethods, getMethodsForObjectAndArrays(context));
+        Object.assign(contextMethods, getMethodForStringsAndArrays(context));
+    }
+    if (type === 'String') {
+        Object.assign(contextMethods, getMethodForStringsAndArrays(context));
+        contextMethods.hasWordsCount = function (count) {
+            return methods.hasWordsCount.call(context, count);
         };
+    }
+    if (type === 'Function') {
+        contextMethods.hasParamsCount = function (count) {
+            return methods.hasParamsCount.call(context, count);
+        };
+    }
+    assignNotMethods(contextMethods);
 
-        return prototype;
-    }, prototype);
+    return contextMethods;
 }
 
 exports.init = function () {
     Object.defineProperty(Object.prototype, 'check', {
         get() {
-            context = this;
-
-            return this;
+            return getContextMethods(this);
         }
     });
-    defineMethodsForPrototype(OBJECT_ARRAY_METHODS, Object.prototype);
-    defineMethodsForPrototype(OBJECT_ARRAY_METHODS, Array.prototype);
-    defineMethodsForPrototype(ARRAY_AND_STRING_METHOD, Array.prototype);
-    defineMethodsForPrototype(ARRAY_AND_STRING_METHOD, String.prototype);
-    defineMethodsForPrototype(STRING_METHOD, String.prototype);
-    defineMethodsForPrototype(FUNCTION_METHOD, Function.prototype);
 };
 
 exports.wrap = function (val) {
@@ -122,19 +152,3 @@ function assignAllMethods(val) {
     return wrap;
 }
 
-function isNull(val) {
-    return val === null;
-}
-
-function assignNotMethods(object) {
-    object.not = {};
-    Object.assign(object.not, Object.getOwnPropertyNames(object)
-        .filter((prop) => prop !== 'not')
-        .reduce((prev, prop) => {
-            prev[prop] = function () {
-                return !object[prop](...Object.values(arguments));
-            };
-
-            return prev;
-        }, {}));
-}
