@@ -63,9 +63,10 @@ function assignNotMethods(object, context) {
                 };
             } else {
                 prev[prop] = function () {
-                    return !methods[prop].call(context, ...Object.values(arguments));
+                    return !callFunction(methods[prop], context, arguments);
                 };
             }
+
             return prev;
         }, {}));
 }
@@ -160,7 +161,7 @@ function assignAllMethods(val) {
         .reduce((prev, method) => {
             if (!isNull(val) && method in val.check) {
                 prev[method] = function () {
-                    return methods[method].call(val, ...Object.values(arguments));
+                    return callFunction(methods[method], val, arguments);
                 };
             } else {
                 prev[method] = function () {
