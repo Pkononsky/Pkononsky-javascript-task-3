@@ -58,11 +58,11 @@ function assignNotMethods(object, context) {
         .filter((prop) => prop !== 'not')
         .reduce((prev, prop) => {
             prev[prop] = function () {
-                return !methods[prop].call(context, ...Object.values(arguments));
+                return isNull(context) && !methods[prop].call(context, ...Object.values(arguments));
             };
 
             return prev;
-        }, {}));
+        }, object.not));
 }
 
 function ObjectConstructor(context) {
@@ -154,13 +154,9 @@ function assignAllMethods(val) {
     Object.getOwnPropertyNames(methods)
         .reduce((prev, method) => {
             prev[method] = function () {
-                if (!isNull(val)) {
-                    if (method in val.check) {
-                        return methods[method].call(val, ...Object.values(arguments));
-                    }
-                }
-
-                return false;
+                return !isNull(val) &&
+                    method in val.check &&
+                    methods[method].call(val, ...Object.values(arguments));
             };
 
             return prev;
