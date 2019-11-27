@@ -49,6 +49,9 @@ const methods = {
     hasWordsCount: function (count) {
         return this.split(' ')
             .filter((word) => word !== '').length === count;
+    },
+    isNull: function () {
+        return isNull(this);
     }
 };
 
@@ -57,7 +60,7 @@ function assignNotMethods(object, context) {
     Object.assign(object.not, Object.getOwnPropertyNames(object)
         .filter((prop) => prop !== 'not')
         .reduce((prev, prop) => {
-            if (isNull(context)) {
+            if (isNull(context) && prop !== 'isNull') {
                 prev[prop] = function () {
                     return true;
                 };
@@ -148,7 +151,7 @@ exports.init = function () {
 exports.wrap = function (val) {
     let wrap = assignAllMethods(val);
     wrap.isNull = function () {
-        return isNull(val);
+        return callFunction(methods.isNull, val, arguments);
     };
     assignNotMethods(wrap, val);
 
