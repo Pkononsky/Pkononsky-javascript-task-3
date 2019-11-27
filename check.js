@@ -85,8 +85,8 @@ function FunctionConstructor(context) {
 }
 
 function callFunction(func, context, args) {
-    return ((isNull(context) && func.name === 'isNull') || !isNull(context)) &&
-        func.name in getPrototypeByVal(context) &&
+    return ((isNull(context) && func.name === 'isNull') ||
+        !isNull(context) && func.name in getPrototypeByVal(context)) &&
         func.call(context, ...Object.values(args));
 }
 
