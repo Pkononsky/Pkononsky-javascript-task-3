@@ -90,52 +90,41 @@ function callFunction(func, context, args) {
         func.call(context, ...Object.values(args));
 }
 
-ObjectConstructor.prototype = {
-    containsKeys() {
-        return callFunction(methods.containsKeys, this.context, arguments);
-    },
-    hasKeys() {
-        return callFunction(methods.hasKeys, this.context, arguments);
-    },
-    containsValues() {
-        return callFunction(methods.containsValues, this.context, arguments);
-    },
-    hasValues() {
-        return callFunction(methods.hasValues, this.context, arguments);
-    },
-    hasValueType() {
-        return callFunction(methods.hasValueType, this.context, arguments);
-    }
-};
+function getMethodsForArrayAndObject() {
+    return {
+        containsKeys() {
+            return callFunction(methods.containsKeys, this.context, arguments);
+        },
+        hasKeys() {
+            return callFunction(methods.hasKeys, this.context, arguments);
+        },
+        containsValues() {
+            return callFunction(methods.containsValues, this.context, arguments);
+        },
+        hasValues() {
+            return callFunction(methods.hasValues, this.context, arguments);
+        },
+        hasValueType() {
+            return callFunction(methods.hasValueType, this.context, arguments);
+        }
+    };
+}
 
-ArrayConstructor.prototype = {
-    containsKeys() {
-        return callFunction(methods.containsKeys, this.context, arguments);
-    },
-    hasKeys() {
-        return callFunction(methods.hasKeys, this.context, arguments);
-    },
-    containsValues() {
-        return callFunction(methods.containsValues, this.context, arguments);
-    },
-    hasValues() {
-        return callFunction(methods.hasValues, this.context, arguments);
-    },
-    hasValueType() {
-        return callFunction(methods.hasValueType, this.context, arguments);
-    },
-    hasLength() {
-        return callFunction(methods.hasLength, this.context, arguments);
-    }
-};
+function getMethodForArrayAndString() {
+    return {
+        hasLength() {
+            return callFunction(methods.hasLength, this.context, arguments);
+        }
+    };
+}
 
-StringConstructor.prototype = {
-    hasWordsCount() {
-        return callFunction(methods.hasWordsCount, this.context, arguments);
-    },
-    hasLength() {
-        return callFunction(methods.hasLength, this.context, arguments);
-    }
+Object.assign(ObjectConstructor.prototype, getMethodsForArrayAndObject());
+Object.assign(ArrayConstructor.prototype, getMethodsForArrayAndObject());
+Object.assign(ArrayConstructor.prototype, getMethodForArrayAndString());
+Object.assign(StringConstructor.prototype, getMethodForArrayAndString());
+
+StringConstructor.prototype.hasWordsCount = function () {
+    return callFunction(methods.hasWordsCount, this.context, arguments);
 };
 
 FunctionConstructor.prototype.hasParamsCount = function () {
