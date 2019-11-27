@@ -52,80 +52,91 @@ const methods = {
     }
 };
 
-function assignNotMethods(object) {
+function assignNotMethods(object, context) {
     object.not = {};
     Object.assign(object.not, Object.getOwnPropertyNames(object)
         .filter((prop) => prop !== 'not')
         .reduce((prev, prop) => {
             prev[prop] = function () {
-                return !object[prop](...Object.values(arguments));
+                return !methods[prop].call(context, ...Object.values(arguments));
             };
 
             return prev;
         }, {}));
 }
 
-function getMethodsForObjectAndArrays(context) {
-    return {
-        containsKeys(keys) {
-            return methods.containsKeys.call(context, keys);
-        },
-        hasKeys(keys) {
-            return methods.hasKeys.call(context, keys);
-        },
-        containsValues(values) {
-            return methods.containsValues.call(context, values);
-        },
-        hasValues(values) {
-            return methods.hasValues.call(context, values);
-        },
-        hasValueType(key, value) {
-            return methods.hasValueType.call(context, key, value);
-        }
-    };
+function ObjectConstructor(context) {
+    this.context = context;
 }
 
-function getMethodForStringsAndArrays(context) {
-    return {
-        hasLength(length) {
-            return methods.hasLength.call(context, length);
-        }
-    };
+function ArrayConstructor(context) {
+    this.context = context;
 }
 
-function getContextMethods(context) {
-    let contextMethods = {};
-    let type = context.constructor.name;
+function StringConstructor(context) {
+    this.context = context;
+}
 
-    if (type === 'Object') {
-        Object.assign(contextMethods, getMethodsForObjectAndArrays(context));
-    }
-    if (type === 'Array') {
-        Object.assign(contextMethods, getMethodsForObjectAndArrays(context));
-        Object.assign(contextMethods, getMethodForStringsAndArrays(context));
-    }
-    if (type === 'String') {
-        Object.assign(contextMethods, getMethodForStringsAndArrays(context));
-        contextMethods.hasWordsCount = function (count) {
-            return methods.hasWordsCount.call(context, count);
-        };
-    }
-    if (type === 'Function') {
-        contextMethods.hasParamsCount = function (count) {
-            return methods.hasParamsCount.call(context, count);
-        };
-    }
-    assignNotMethods(contextMethods);
+function FunctionConstructor(context) {
+    this.context = context;
+}
 
-    return contextMethods;
+function callFunction(func, context, args) {
+    return func.call(context, ...Object.values(args));
+}
+
+ObjectConstructor.prototype = {
+    containsKeys() {
+        return callFunction(methods.containsKeys, this.context, arguments);
+    },
+    hasKeys() {
+        return callFunction(methods.hasKeys, this.context, arguments);
+    },
+    containsValues() {
+        return callFunction(methods.containsValues, this.context, arguments);
+    },
+    hasValues() {
+        return callFunction(methods.hasValues, this.context, arguments);
+    },
+    hasValueType() {
+        return callFunction(methods.hasValueType, this.context, arguments);
+    }
+};
+
+ArrayConstructor.prototype = Object.create(ObjectConstructor.prototype);
+ArrayConstructor.prototype.hasLength = function () {
+    return callFunction(methods.hasLength, this.context, arguments);
+};
+
+StringConstructor.prototype = {
+    hasWordsCount() {
+        return callFunction(methods.hasWordsCount, this.context, arguments);
+    },
+    hasLength() {
+        return callFunction(methods.hasLength, this.context, arguments);
+    }
+};
+
+FunctionConstructor.prototype.hasParamsCount = function () {
+    return callFunction(methods.hasParamsCount, this.context, arguments);
+};
+
+function defineCheckForPrototype(proto, Constructor) {
+    Object.defineProperty(proto, 'check', {
+        get() {
+            let constructor = new Constructor(this);
+            assignNotMethods(Constructor.prototype, this);
+
+            return constructor;
+        }
+    });
 }
 
 exports.init = function () {
-    Object.defineProperty(Object.prototype, 'check', {
-        get() {
-            return getContextMethods(this);
-        }
-    });
+    defineCheckForPrototype(Object.prototype, ObjectConstructor);
+    defineCheckForPrototype(Array.prototype, ArrayConstructor);
+    defineCheckForPrototype(String.prototype, StringConstructor);
+    defineCheckForPrototype(Function.prototype, FunctionConstructor);
 };
 
 exports.wrap = function (val) {
@@ -133,7 +144,7 @@ exports.wrap = function (val) {
     wrap.isNull = function () {
         return isNull(val);
     };
-    assignNotMethods(wrap);
+    assignNotMethods(wrap, val);
 
     return wrap;
 };
