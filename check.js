@@ -85,7 +85,7 @@ function FunctionConstructor(context) {
 }
 
 function callFunction(func, context, args) {
-    return func.call(context, ...Object.values(args));
+    return !isNull(context) && func.call(context, ...Object.values(args));
 }
 
 ObjectConstructor.prototype = {
@@ -145,7 +145,7 @@ exports.init = function () {
 exports.wrap = function (val) {
     let wrap = assignAllMethods(val);
     wrap.isNull = function () {
-        return callFunction(methods.isNull, val, arguments);
+        return methods.isNull.call(val);
     };
     assignNotMethods(wrap, val);
 
