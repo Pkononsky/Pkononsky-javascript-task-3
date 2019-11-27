@@ -85,7 +85,8 @@ function FunctionConstructor(context) {
 }
 
 function callFunction(func, context, args) {
-    return !isNull(context) && func.call(context, ...Object.values(args));
+    return ((isNull(context) && func.name === 'isNull') || !isNull(context)) &&
+        func.call(context, ...Object.values(args));
 }
 
 ObjectConstructor.prototype = {
