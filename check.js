@@ -86,6 +86,7 @@ function FunctionConstructor(context) {
 
 function callFunction(func, context, args) {
     return ((isNull(context) && func.name === 'isNull') || !isNull(context)) &&
+        func.name in getPrototypeByVal(context) &&
         func.call(context, ...Object.values(args));
 }
 
@@ -159,7 +160,7 @@ function assignAllMethods(val) {
         .reduce((prev, method) => {
             prev[method] = function () {
                 return !isNull(val) &&
-                    method in val.check &&
+                    method in getPrototypeByVal(val) &&
                     methods[method].call(val, ...Object.values(arguments));
             };
 
@@ -167,4 +168,22 @@ function assignAllMethods(val) {
         }, wrap);
 
     return wrap;
+}
+
+function getPrototypeByVal(val) {
+    if (val === null) {
+        return null;
+    }
+    if (val.constructor.name === 'Object') {
+        return ObjectConstructor.prototype;
+    }
+    if (val.constructor.name === 'Array') {
+        return ArrayConstructor.prototype;
+    }
+    if (val.constructor.name === 'String') {
+        return StringConstructor.prototype;
+    }
+    if (val.constructor.name === 'Function') {
+        return FunctionConstructor.prototype;
+    }
 }
