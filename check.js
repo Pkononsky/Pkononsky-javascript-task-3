@@ -108,9 +108,25 @@ ObjectConstructor.prototype = {
     }
 };
 
-ArrayConstructor.prototype = Object.create(ObjectConstructor.prototype);
-ArrayConstructor.prototype.hasLength = function () {
-    return callFunction(methods.hasLength, this.context, arguments);
+ArrayConstructor.prototype = {
+    containsKeys() {
+        return callFunction(methods.containsKeys, this.context, arguments);
+    },
+    hasKeys() {
+        return callFunction(methods.hasKeys, this.context, arguments);
+    },
+    containsValues() {
+        return callFunction(methods.containsValues, this.context, arguments);
+    },
+    hasValues() {
+        return callFunction(methods.hasValues, this.context, arguments);
+    },
+    hasValueType() {
+        return callFunction(methods.hasValueType, this.context, arguments);
+    },
+    hasLength() {
+        return callFunction(methods.hasLength, this.context, arguments);
+    }
 };
 
 StringConstructor.prototype = {
